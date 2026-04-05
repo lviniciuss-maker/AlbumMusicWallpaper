@@ -1,33 +1,33 @@
 # 🎵 Music Wallpaper (Live)
 
-Um aplicativo Android nativo que transforma a tela de bloqueio e a tela inicial do seu dispositivo em uma experiência musical imersiva. Ele detecta a música que está tocando atualmente no seu reprodutor favorito (Spotify, Apple Music, etc.) e aplica automaticamente a capa do álbum animada (Canvas) ou estática em alta resolução como papel de parede do sistema.
+A native Android application that transforms your device's lock screen and home screen into an immersive musical experience. It detects the currently playing track from your favorite media player (Spotify, Apple Music, etc.) and automatically applies the animated album cover (Canvas) or high-resolution static artwork as the system wallpaper.
 
-## ✨ Funcionalidades
+## ✨ Features
 
- Sincronização em Tempo Real Utiliza `NotificationListenerService` para detectar mudanças de faixas instantaneamente em segundo plano.
- Vídeos Animados (Canvas) Reprodução fluida de vídeos HLS usando `Media3ExoPlayer` diretamente na superfície do papel de parede.
- Fallback Inteligente Se a faixa não possuir vídeo animado, o app busca a capa estática em altíssima resolução (via iTunes API).
- Controle de Escurecimento (Dimming) Um slider em tempo real permite ao usuário escurecer a capa estática (0% a 100%) para melhorar a legibilidade do relógio e notificações na tela de bloqueio.
- Modo OciosoPausado Permite escolher uma foto personalizada da galeria para ser exibida quando nenhuma música estiver tocando.
+* **Real-Time Synchronization:** Uses `NotificationListenerService` to detect track changes instantly in the background.
+* **Animated Videos (Canvas):** Smooth playback of HLS videos using `Media3/ExoPlayer` directly on the wallpaper surface.
+* **Smart Fallback:** If the track doesn't have an animated video, the app fetches high-resolution static artwork (via iTunes API).
+* **Dimming Control:** A real-time slider allows users to dim the static artwork (0% to 100%) to improve the readability of the clock and notifications on the lock screen.
+* **Idle/Paused Mode:** Allows choosing a custom photo from the gallery to be displayed when no music is playing.
 
-## 🛠️ Desafios Técnicos Resolvidos
+## 🛠️ Technical Challenges Resolved
 
-Construir um Live Wallpaper contínuo exige lidar com fragmentação de hardware e peculiaridades do Android. Este projeto conta com soluções de arquitetura para problemas complexos
+Building a continuous Live Wallpaper requires dealing with hardware fragmentation and Android OS quirks. This project features architectural solutions for complex problems:
 
-1. Tratamento de Codecs e HDR (Falso Negativo)
-   Muitas APIs de música retornam vídeos codificados em perfis pesados, como HEVC 10-bits (HDR). Em segundo plano, o hardware de muitos dispositivos bloqueia a decodificação (`MediaCodecRenderer$DecoderInitializationException`). O app possui um Listener de erros acoplado ao ExoPlayer que intercepta essa falha de hardware em milissegundos e faz um fallback silencioso para a capa estática, impedindo travamentos e telas pretas.
+1. **Codec Handling and HDR (False Negatives):**
+   Many music APIs return videos encoded in heavy profiles, such as 10-bit HEVC (HDR). Running in the background, the hardware of many devices blocks this decoding (`MediaCodecRenderer$DecoderInitializationException`). The app features an error *Listener* coupled to ExoPlayer that intercepts this hardware failure in milliseconds and makes a silent fallback to the static artwork, preventing crashes and black screens.
 
-2. Bypass de Bloqueio de Surface (OppoColorOS)
-   Sistemas operacionais altamente modificados (como ColorOSRealmeUI) costumam travar o `SurfaceHolder` assim que um `Canvas` estático é desenhado (`cur=2 req=3 Invalid argument -22`). Para alternar perfeitamente entre uma Foto (Canvas) e um Vídeo (ExoPlayer) sem gerar crashes, implementei uma técnica de reconfiguração de formato de pixel (`PixelFormat.RGBX_8888` vs `RGBA_8888`), forçando o sistema a recriar a superfície dinamicamente de forma limpa.
+2. **Surface Lock Bypass (Oppo/ColorOS):**
+   Highly modified operating systems (like ColorOS/RealmeUI) tend to "lock" the `SurfaceHolder` once a static `Canvas` is drawn (`cur=2 req=3 Invalid argument -22`). To seamlessly switch between a Photo (Canvas) and a Video (ExoPlayer) without causing crashes, I implemented a pixel format reconfiguration technique (`PixelFormat.RGBX_8888` vs `RGBA_8888`), forcing the OS to dynamically and cleanly recreate the surface.
 
-3. Sanitização de Metadados para APIs
-   Um algoritmo de limpeza de strings (Faxineiro de Nomes) foi implementado para remover sufixos inúteis inseridos por players (ex - EP, - Single, (feat. XYZ)). O repositório realiza um sistema de retry em 3 etapas (Busca Completa - Busca sem Faixa - Busca sem Álbum) para garantir a maior taxa de acerto possível nas APIs REST.
+3. **Metadata Sanitization for APIs:**
+   A string cleaning algorithm was implemented to remove useless suffixes appended by media players (e.g., "- EP", "- Single", "(feat. XYZ)"). The repository performs a 3-step retry system (Full Search -> Search without Track -> Search without Album) to ensure the highest possible hit rate on REST APIs.
 
-## 💻 Tecnologias e Bibliotecas Utilizadas
+## 💻 Tech Stack
 
- Linguagem Kotlin
- Arquitetura Coroutines & Kotlin Flow (Reatividade)
- Persistência de Dados Jetpack DataStore (Preferences)
- Rede Retrofit2 & OkHttp3
- Mídia AndroidX Media3 (ExoPlayer & HLS)
- Componentes Core `WallpaperService`, `NotificationListenerService`
+* **Language:** Kotlin
+* **Architecture:** Coroutines & Kotlin Flow (Reactivity)
+* **Local Storage:** Jetpack DataStore (Preferences)
+* **Networking:** Retrofit2 & OkHttp3
+* **Media:** AndroidX Media3 (ExoPlayer & HLS)
+* **Core Components:** `WallpaperService`, `NotificationListenerService`
